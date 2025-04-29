@@ -1,0 +1,234 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contrarian Type Survey</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React and ReactDOM CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Babel CDN for JSX -->
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const questions = [
+      {
+        text: "How often does your coworker take the opposing side in discussions or decisions?",
+        options: [
+          { id: "a", text: "Almost always, regardless of the topic or who they’re opposing.", type: "Contrarian Supporter" },
+          { id: "b", text: "Frequently, especially when defending a specific group or idea.", type: "Apologist for the Opposition" },
+          { id: "c", text: "Occasionally, mainly to challenge ideas or spark debate.", type: "Devil’s Advocate" },
+          { id: "d", text: "Consistently, but only when supporting a particular person or team.", type: "Ally of the Opposition" }
+        ]
+      },
+      {
+        text: "What seems to be their main motivation when supporting the opposing side?",
+        options: [
+          { id: "a", text: "To stand out or assert their independence by disagreeing.", type: "Contrarian Supporter" },
+          { id: "b", text: "To justify or defend the opposing side’s principles or actions.", type: "Apologist for the Opposition" },
+          { id: "c", text: "To test the strength of your argument or explore alternatives.", type: "Devil’s Advocate" },
+          { id: "d", text: "To align themselves with a specific person or group they’re loyal to.", type: "Ally of the Opposition" }
+        ]
+      },
+      {
+        text: "How do they respond when you present strong evidence for your position?",
+        options: [
+          { id: "a", text: "They dismiss it or shift to another point to keep opposing you.", type: "Contrarian Supporter" },
+          { id: "b", text: "They double down, passionately defending the opposing view.", type: "Apologist for the Opposition" },
+          { id: "c", text: "They acknowledge your point but push you to consider the other side.", type: "Devil’s Advocate" },
+          { id: "d", text: "They defend the opposing side only if it aligns with their allies’ stance.", type: "Ally of the Opposition" }
+        ]
+      },
+      {
+        text: "Does their opposition seem personal or targeted toward you?",
+        options: [
+          { id: "a", text: "Not personal; they oppose everyone equally to be different.", type: "Contrarian Supporter" },
+          { id: "b", text: "Somewhat personal, especially if you challenge their favored group/idea.", type: "Apologist for the Opposition" },
+          { id: "c", text: "Not personal; they focus on the ideas, not you as a person.", type: "Devil’s Advocate" },
+          { id: "d", text: "Personal, especially if you’re at odds with someone they support.", type: "Ally of the Opposition" }
+        ]
+      },
+      {
+        text: "How do they behave in group discussions or meetings?",
+        options: [
+          { id: "a", text: "They often take the opposite stance from the majority to stand out.", type: "Contrarian Supporter" },
+          { id: "b", text: "They advocate strongly for the opposing side’s perspective or values.", type: "Apologist for the Opposition" },
+          { id: "c", text: "They raise counterpoints to ensure all angles are considered.", type: "Devil’s Advocate" },
+          { id: "d", text: "They back the opposing side when it aligns with their preferred group.", type: "Ally of the Opposition" }
+        ]
+      },
+      {
+        text: "Do they seem to genuinely believe in the opposing side they support?",
+        options: [
+          { id: "a", text: "Not always; it feels like they just enjoy being contrary.", type: "Contrarian Supporter" },
+          { id: "b", text: "Yes, they seem deeply committed to the opposing side’s cause.", type: "Apologist for the Opposition" },
+          { id: "c", text: "Not necessarily; they seem more interested in testing ideas.", type: "Devil’s Advocate" },
+          { id: "d", text: "Yes, but only when it involves people or groups they’re loyal to.", type: "Ally of the Opposition" }
+        ]
+      },
+      {
+        text: "How do they react when the opposing side they support is proven wrong?",
+        options: [
+          { id: "a", text: "They move on or find another way to disagree.", type: "Contrarian Supporter" },
+          { id: "b", text: "They defend the opposing side’s intentions or shift blame.", type: "Apologist for the Opposition" },
+          { id: "c", text: "They admit the flaw but suggest the discussion was still valuable.", type: "Devil’s Advocate" },
+          { id: "d", text: "They stay loyal to their allies, even if the position is weak.", type: "Ally of the Opposition" }
+        ]
+      },
+      {
+        text: "In what context do they most often support the opposing side?",
+        options: [
+          { id: "a", text: "In any debate or discussion, regardless of the stakes.", type: "Contrarian Supporter" },
+          { id: "b", text: "When ideological or moral issues are at play.", type: "Apologist for the Opposition" },
+          { id: "c", text: "When brainstorming or problem-solving to explore all options.", type: "Devil’s Advocate" },
+          { id: "d", text: "When their favored person or team is involved.", type: "Ally of the Opposition" }
+        ]
+      },
+      {
+        text: "How would you describe their tone when supporting the opposing side?",
+        options: [
+          { id: "a", text: "Confident and provocative, like they enjoy challenging others.", type: "Contrarian Supporter" },
+          { id: "b", text: "Passionate and defensive, like they’re protecting something important.", type: "Apologist for the Opposition" },
+          { id: "c", text: "Curious and questioning, like they’re exploring possibilities.", type: "Devil’s Advocate" },
+          { id: "d", text: "Loyal and protective, like they’re standing up for their allies.", type: "Ally of the Opposition" }
+        ]
+      },
+      {
+        text: "Do they ever support your side or agree with you?",
+        options: [
+          { id: "a", text: "Rarely; they seem to thrive on disagreement.", type: "Contrarian Supporter" },
+          { id: "b", text: "Only if your side aligns with their favored group or idea.", type: "Apologist for the Opposition" },
+          { id: "c", text: "Sometimes, if they feel the discussion has been thorough.", type: "Devil’s Advocate" },
+          { id: "d", text: "Only if your side doesn’t conflict with their allies’ interests.", type: "Ally of the Opposition" }
+        ]
+      }
+    ];
+
+    function SurveyApp() {
+      const [answers, setAnswers] = React.useState({});
+      const [result, setResult] = React.useState(null);
+
+      const handleAnswerChange = (questionIndex, optionId) => {
+        setAnswers({ ...answers, [questionIndex]: optionId });
+      };
+
+      const calculateResult = () => {
+        const counts = { a: 0, b: 0, c: 0, d: 0 };
+        Object.values(answers).forEach(answer => {
+          if (answer) counts[answer]++;
+        });
+
+        const maxCount = Math.max(...Object.values(counts));
+        if (maxCount === 0) {
+          setResult("Please answer at least one question.");
+          return;
+        }
+
+        const resultType = Object.keys(counts).find(key => counts[key] === maxCount);
+        const typeMap = {
+          a: "Contrarian Supporter (opposes for the sake of being different)",
+          b: "Apologist for the Opposition (passionately defends the opposing side’s principles)",
+          c: "Devil’s Advocate (challenges to test ideas or broaden discussion)",
+          d: "Ally of the Opposition (supports the opposing side due to loyalty to specific people/groups)"
+        };
+
+        if ([counts.a, counts.b, counts.c, counts.d].filter(count => count === maxCount).length > 1) {
+          setResult("The answers are tied. Please review or consult another observer for clarity.");
+        } else {
+          setResult(`Your coworker is likely a ${typeMap[resultType]}.`);
+        }
+      };
+
+      return (
+        <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-lg my-8">
+          <h1 className="text-2xl font-bold text-center mb-4">Contrarian Type Survey</h1>
+          <p className="text-gray-600 mb-6">
+            This survey helps identify whether your coworker consistently supports opposing viewpoints and their contrarian type. Answer based on their behavior.
+          </p>
+
+          {questions.map((question, index) => (
+            <div key={index} className="mb-6">
+              <h2 className="text-lg font-semibold mb-2">{index + 1}. {question.text}</h2>
+              {question.options.map(option => (
+                <div key={option.id} className="mb-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name={`question-${index}`}
+                      value={option.id}
+                      checked={answers[index] === option.id}
+                      onChange={() => handleAnswerChange(index, option.id)}
+                      className="mr-2"
+                    />
+                    {option.text}
+                  </label>
+                </div>
+              ))}
+            </div>
+          ))}
+
+          <button
+            onClick={calculateResult}
+            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+          >
+            Submit
+          </button>
+
+          {result && (
+            <div className="mt-6 p-4 bg-gray-100 rounded">
+              <h2 className="text-lg font-semibold">Result:</h2>
+              <p>{result}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<SurveyApp />, document.getElementById('root'));
+  </script>
+</body>
+</html>
