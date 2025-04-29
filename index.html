@@ -193,7 +193,11 @@
           <p className="text-gray-600 mb-6">
             This survey helps identify whether your coworker consistently supports opposing viewpoints and their contrarian type. Answer based on their behavior.
           </p>
-
+                <div className="mb-6 p-4 bg-gray-100 rounded">
+                  <h2 className="text-lg font-semibold">About This Survey</h2>
+                  <p>This survey helps you identify your coworker's contrarian type, such as Contrarian Supporter, Apologist for the Opposition, Devil’s Advocate, or Ally of the Opposition.</p>
+                  <p>Visit <a href="https://4rd1.github.io/ardi.github.io/" target="_blank" className="text-blue-500 hover:underline">the survey site</a> to start.</p>
+                </div>
           {questions.map((question, index) => (
             <div key={index} className="mb-6">
               <h2 className="text-lg font-semibold mb-2">{index + 1}. {question.text}</h2>
